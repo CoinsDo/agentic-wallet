@@ -39,7 +39,9 @@ from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parents[1]
 TESTED_FILE = SKILL_DIR / "mcp-tested.json"
-DOWNLOAD = "https://github.com/CoinsDo/coinsdo-wallet-mcp/releases/download/{version}/{asset}"
+BUNDLED = SKILL_DIR.parents[1] / "mcp"  # the repo's mcp/ folder, when the Host installed the whole repo
+DOWNLOAD = "https://github.com/CoinsDo/coinsdo-wallet-mcp/releases/download/{version}/{asset}"  # up to v1.0.9
+DOWNLOAD_IN_REPO = "https://raw.githubusercontent.com/CoinsDo/agentic-wallet/{commit}/mcp/{asset}"  # mcp-tested.json in_repo
 SERVER_NAME = "coinwallet"
 READY_SECONDS = 150  # a macOS keychain popup can wait for the user's password
 HOST_ENV_KEYS = ("PATH", "HOME", "USER", "LANG", "LC_ALL", "TMPDIR", "XDG_CONFIG_HOME")
@@ -83,6 +85,18 @@ def load_tested():
         return minimum, tested
     except (OSError, ValueError, KeyError, TypeError, AttributeError):
         raise Stop("failed", "The skill file mcp-tested.json is missing or broken. Reinstall the skill.") from None
+
+
+def download_url(version, asset):
+    """Builds from v1.0.10 live in this repo's mcp/ folder, pinned to the commit that added them."""
+    try:
+        commits = {vtuple(name): sha for name, sha in
+                   json.loads(TESTED_FILE.read_text(encoding="utf-8")).get("in_repo", {}).items()}
+    except (OSError, ValueError, AttributeError):
+        commits = {}
+    if version in commits:
+        return DOWNLOAD_IN_REPO.format(commit=commits[version], asset=asset)
+    return DOWNLOAD.format(version=vname(version), asset=asset)
 
 
 def load_no_fallback():
@@ -211,6 +225,16 @@ def fetch(url, target):
         raise Stop("failed", "Download failed. Check the internet connection, then run install again.")
 
 
+def bundled_matches(asset, expected_sha):
+    """Claude Code and Codex install the whole repo: its mcp/ folder is already here. Hermes and OpenClaw copy only
+    this skill folder, so they download the same files instead. Used only when its checksum is the tested one."""
+    path = BUNDLED / asset
+    try:
+        return path.is_file() and sha256(path) == expected_sha
+    except OSError:
+        return False
+
+
 def download(version, expected_sha, binary, local_dir=None, source_file=None):
     asset = asset_name()
     binary.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -221,8 +245,10 @@ def download(version, expected_sha, binary, local_dir=None, source_file=None):
             shutil.copyfile(str(source_file), partial)
         elif local_dir:
             shutil.copyfile(str(Path(local_dir) / vname(version) / asset), partial)
+        elif bundled_matches(asset, expected_sha):
+            shutil.copyfile(str(BUNDLED / asset), partial)
         else:
-            fetch(DOWNLOAD.format(version=vname(version), asset=asset), partial)
+            fetch(download_url(version, asset), partial)
         if sha256(partial) != expected_sha:
             raise Stop("failed", "The downloaded file does not match the tested checksum. Nothing was installed.")
         os.chmod(partial, 0o755)
@@ -758,6 +784,7 @@ def do_fallback(args):
 
 
 RELEASES_REPO = "CoinsDo/agentic-wallet"
+SKILL_TAG = re.compile(r"v\d+\.\d+\.\d+$")  # skill releases only; mcp-vX.Y.Z releases hold the MCP builds
 LATEST_URL = "https://api.github.com/repos/{repo}/releases?per_page=30"  # newest first
 NOTES_MAX = 600
 IMPORTANCE = ("security", "recommended", "optional")
@@ -817,7 +844,7 @@ def fetch_releases():
         return None
     releases = [{"tag": vname(vtuple(str(item.get("tag_name", "")))), "title": str(item.get("name") or ""),
                  "body": str(item.get("body") or "")}
-                for item in data if isinstance(item, dict) and vtuple(str(item.get("tag_name", "")))
+                for item in data if isinstance(item, dict) and SKILL_TAG.match(str(item.get("tag_name", "")))
                 and not item.get("draft") and not item.get("prerelease")]
     return sorted(releases, key=lambda r: vtuple(r["tag"]), reverse=True)
 

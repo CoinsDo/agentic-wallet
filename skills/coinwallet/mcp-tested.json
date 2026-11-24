@@ -12,7 +12,18 @@
       "service-darwin-arm64": "d2a014e52dab5bce8909932662d8d4addbcbb203aeaaea9a52e817c56104d507",
       "service-linux-amd64": "baee7a5145cd14dca2aee06218821ba9b057f2260f36b528c78eaca99e719a3b",
       "service-linux-arm64": "3e92a1150a8c642f37297a21ee39fe3933dfb12b2985bc245d472546fc411307"
+    },
+    "v1.0.10": {
+      "service-darwin-amd64": "ef4060099370f464d77be14916abdcb7a97fee8d2cf61851f3eaf7ba3da1e9bb",
+      "service-darwin-arm64": "d45f7b891dfeaa6672ddfab06bb5a6cd943331af45d5c45e629550abca772c98",
+      "service-linux-amd64": "94185e9f3b0659a065996da759ea1eb9707f7f0f621383aff9e885c6cc3dd96e",
+      "service-linux-arm64": "1ac4e1ff072692fa1082eac988b38f6314ca020be9f6c037fe2b5bae650e0345"
     }
   },
-  "no_fallback": []
+  "no_fallback": [
+    "v1.0.10"
+  ],
+  "in_repo": {
+    "v1.0.10": "37374f4a2d2c87b12b7a6e9821ec6c21e3ef57f3"
+  }
 }

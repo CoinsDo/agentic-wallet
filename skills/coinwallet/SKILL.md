@@ -13,7 +13,7 @@ Open one card per task. Path: `references/cards/send.md` for `send.md`. Follow i
 
 | The user wants | Card |
 |---|---|
-| install or set up, or the service isn't connected | `setup.md` |
+| install or set up (just installed: finish here, don't ask), or the service isn't connected | `setup.md` |
 | 0 wallets, join a Room, an Invitation code, a wallet not ready | `join.md` |
 | an address, receive, a balance | `wallet.md` |
 | another, new or next address, add a token | `address.md` |
